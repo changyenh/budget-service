@@ -1,46 +1,38 @@
+import java.time.Duration;
 import java.time.LocalDate;
 import java.time.Period;
-import java.util.List;
-import java.util.Optional;
+import java.time.YearMonth;
+import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
+import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 public class BudgetService {
 
-    private IBudgetRepo iBudgetRepo;
+    private final IBudgetRepo iBudgetRepo;
+    private final Map<String, Double> dailyBudgetMap;
+    private final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyyMM");
+
 
     public BudgetService(IBudgetRepo iBudgetRepo) {
         this.iBudgetRepo = iBudgetRepo;
+        this.dailyBudgetMap = this.iBudgetRepo.getAll()
+                .stream()
+                .collect(
+                        Collectors.toMap(
+                                b -> b.yearMonth,
+                                b -> ((b.amount * 1.0) / YearMonth.parse(b.yearMonth, formatter).getMonth().maxLength())));
+
     }
 
-    public double query(LocalDate startTime, LocalDate endTime) {
-        List<Budget> budgets = iBudgetRepo.getAll();
 
-        Period period = Period.between(startTime, endTime);
-
-        int periodDays = period.getDays() + 1;
-        if (periodDays >= 0) {
-            LocalDate tempDate = LocalDate.from(startTime);
-            double sum = 0.0;
-            for (int i = 0; i <= periodDays; i++) {
-                Optional<Budget> b=budgets.stream().filter(budget ->
-                    Integer.parseInt(budget.yearMonth.substring(4, 6)) == startTime.getMonth().getValue() && Integer.parseInt(budget.yearMonth.substring(0, 4)) ==  startTime.getYear()
-            ).findFirst();
-                if (b.get() != null && b.get().amount > 0) {
-                    sum+=b.get().amount / tempDate.getMonth().maxLength();
-                }
-                tempDate.plusDays(1);
-            }
-            return sum;
-        }
-
-
-        return 0.0d;
+    public double query(final LocalDate startTime, final LocalDate endTime) {
+        int days = (int)ChronoUnit.DAYS.between(startTime, endTime) + 1;
+        return IntStream.range(0, days).boxed().mapToDouble(i -> {
+            LocalDate date = startTime.plusDays(i);
+            return dailyBudgetMap.getOrDefault(formatter.format(date), 0.0);
+        }).sum();
     }
 
-    private List<Budget> filterBudget(LocalDate startTime, LocalDate endTime) {
-        return null;
-    }
-
-    protected List<Budget> getReport() {
-        return null;
-    }
 }
