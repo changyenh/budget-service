@@ -39,8 +39,8 @@ public class BudgetServiceTest {
         }}));
 
         BudgetService budgetService = new BudgetService(budgetRepo);
-        LocalDate startTime = LocalDate.of(2019, 12, 31);
-        LocalDate endTime = LocalDate.of(2020, 2, 1);
+        LocalDate startTime = LocalDate.of(2020, 1, 1);
+        LocalDate endTime = LocalDate.of(2020, 1, 10);
         double budget = budgetService.query(startTime, endTime);
         assertEquals(budget, 42.0, 0);
     }

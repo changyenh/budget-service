@@ -1,6 +1,7 @@
 import java.time.LocalDate;
+import java.time.Period;
 import java.util.List;
-import java.util.stream.Collectors;
+import java.util.Optional;
 
 public class BudgetService {
 
@@ -13,15 +14,23 @@ public class BudgetService {
     public double query(LocalDate startTime, LocalDate endTime) {
         List<Budget> budgets = iBudgetRepo.getAll();
 
-        if (startTime.getMonth() == endTime.getMonth()) {
+        Period period = Period.between(startTime, endTime);
 
-            List<Budget> monthBudgets = budgets.stream().filter(budget ->
+        int periodDays = period.getDays() + 1;
+        if (periodDays >= 0) {
+            LocalDate tempDate = LocalDate.from(startTime);
+            double sum = 0.0;
+            for (int i = 0; i <= periodDays; i++) {
+                Optional<Budget> b=budgets.stream().filter(budget ->
                     Integer.parseInt(budget.yearMonth.substring(4, 6)) == startTime.getMonth().getValue() && Integer.parseInt(budget.yearMonth.substring(0, 4)) ==  startTime.getYear()
-            ).collect(Collectors.toList());
-
-            return monthBudgets.get(0).amount;
+            ).findFirst();
+                if (b.get() != null && b.get().amount > 0) {
+                    sum+=b.get().amount / tempDate.getMonth().maxLength();
+                }
+                tempDate.plusDays(1);
+            }
+            return sum;
         }
-
 
 
         return 0.0d;
