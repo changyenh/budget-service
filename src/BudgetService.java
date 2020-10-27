@@ -1,46 +1,39 @@
 import java.time.LocalDate;
-import java.time.Period;
-import java.util.List;
-import java.util.Optional;
+import java.time.YearMonth;
+import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
+import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 public class BudgetService {
 
-    private IBudgetRepo iBudgetRepo;
-
-    public BudgetService(IBudgetRepo iBudgetRepo) {
-        this.iBudgetRepo = iBudgetRepo;
-    }
-
-    public double query(LocalDate startTime, LocalDate endTime) {
-        List<Budget> budgets = iBudgetRepo.getAll();
-
-        Period period = Period.between(startTime, endTime);
-
-        int periodDays = period.getDays() + 1;
-        if (periodDays >= 0) {
-            LocalDate tempDate = LocalDate.from(startTime);
-            double sum = 0.0;
-            for (int i = 0; i <= periodDays; i++) {
-                Optional<Budget> b=budgets.stream().filter(budget ->
-                    Integer.parseInt(budget.yearMonth.substring(4, 6)) == startTime.getMonth().getValue() && Integer.parseInt(budget.yearMonth.substring(0, 4)) ==  startTime.getYear()
-            ).findFirst();
-                if (b.get() != null && b.get().amount > 0) {
-                    sum+=b.get().amount / tempDate.getMonth().maxLength();
-                }
-                tempDate.plusDays(1);
-            }
-            return sum;
-        }
+  private final IBudgetRepo iBudgetRepo;
+  private final Map<String, Double> budgetPerDay;
+  private final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyyMM");
 
 
-        return 0.0d;
-    }
+  public BudgetService(IBudgetRepo iBudgetRepo) {
+    this.iBudgetRepo = iBudgetRepo;
+    this.budgetPerDay = this.iBudgetRepo.getAll()
+        .stream()
+        .collect(Collectors.toMap(
+            b -> b.yearMonth,
+            b -> ((b.amount * 1.0) / parseMonthLength(b.yearMonth))));
+  }
 
-    private List<Budget> filterBudget(LocalDate startTime, LocalDate endTime) {
-        return null;
-    }
+  private int parseMonthLength(String yearMonth) {
+    return YearMonth.parse(yearMonth, formatter).getMonth().maxLength();
+  }
 
-    protected List<Budget> getReport() {
-        return null;
-    }
+
+  public double query(final LocalDate startTime, final LocalDate endTime) {
+    int days = (int) ChronoUnit.DAYS.between(startTime, endTime) + 1;
+    return IntStream.range(0, days).boxed().mapToDouble(i -> getBudget(startTime.plusDays(i))).sum();
+  }
+
+  private double getBudget(LocalDate date) {
+    return budgetPerDay.getOrDefault(formatter.format(date), 0.0);
+  }
+
 }

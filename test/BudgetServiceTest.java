@@ -22,7 +22,7 @@ public class BudgetServiceTest {
         LocalDate startTime = LocalDate.of(2020, 1, 1);
         LocalDate endTime = LocalDate.of(2020, 1, 31);
         double budget = budgetService.query(startTime, endTime);
-        assertEquals(budget, 31.0, 0);
+        assertEquals(31.0, budget, 0);
     }
 
     @Test
@@ -42,7 +42,7 @@ public class BudgetServiceTest {
         LocalDate startTime = LocalDate.of(2020, 1, 1);
         LocalDate endTime = LocalDate.of(2020, 1, 10);
         double budget = budgetService.query(startTime, endTime);
-        assertEquals(budget, 42.0, 0);
+        assertEquals(46.0, budget, 0);
     }
 
 
